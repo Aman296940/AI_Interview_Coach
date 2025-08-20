@@ -306,6 +306,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-**Built with ❤️ by [Your Name]**
+**Built with ❤️ by [Aman Bajoria]**
 
-For support or questions, please open an issue on GitHub or contact [your-email@example.com]
+For support or questions, please open an issue on GitHub.
