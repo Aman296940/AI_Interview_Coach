@@ -55,17 +55,20 @@ Interview-AI-Coach/
 
 ## 🔧 Installation & Setup
 
-### 1. Clone the repository
+1. **Clone the repository**
 ```bash
 git clone https://github.com/your-username/interview-ai-coach.git
 cd interview-ai-coach
-2. Setup Backend
-bash
-Copy
-Edit
+```
+
+Setup Backend
+
+bash 
 cd backend
 npm install
-Create a .env file inside backend/ with the following:
+Create a .env file inside backend/ with:
+
+ini
 
 PORT=5000
 MONGO_URI=your_mongo_connection_string
@@ -76,14 +79,15 @@ Run the backend:
 bash
 
 npm start
-3. Setup Frontend
+Setup Frontend
+
 bash
 
 cd frontend
 npm install
 npm run dev
-The frontend should now be running at http://localhost:3000
-and the backend at http://localhost:5000.
+Frontend runs on 👉 http://localhost:3000
+Backend runs on 👉 http://localhost:5000
 
 📊 API Endpoints
 Auth
@@ -99,13 +103,13 @@ POST /api/interview/answer → Submit answer & get AI feedback
 GET /api/interview/:id → Get interview session details
 
 ✅ Usage
-Register/Login as a user.
+Register/Login as a user
 
-Start a new interview session.
+Start a new interview session
 
-Answer questions (text/voice).
+Answer questions (text/voice)
 
-Get:
+Receive:
 
 Score (0–100)
 
@@ -113,23 +117,23 @@ Feedback
 
 Suggested better answer
 
-Topic to study
+Study topic
 
-At the end, view your final weighted score.
+At the end, view your final weighted score
 
 🛠 Development Notes
-Make sure MongoDB is running (local or Atlas).
+Ensure MongoDB is running (local or Atlas)
 
-Ensure your Perplexity API key is valid.
+Use a valid Perplexity API key
 
-If using voice-based answers, configure microphone access in frontend.
+For voice answers, enable microphone access in the frontend
 
 📌 Roadmap
  Add admin dashboard for question curation
 
  Export interview reports as PDF
 
- Integrate multiple AI models for better scoring
+ Integrate multiple AI models for scoring
 
  Add timed interviews
 
