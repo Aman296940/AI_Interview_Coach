@@ -3,12 +3,33 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-    console.log('Attempting to connect to MongoDB with URI:', process.env.MONGO_URI);
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI environment variable is not set');
+    }
+    
+    console.log('Attempting to connect to MongoDB...');
+    // Remove sensitive info from log
+    const uriForLog = process.env.MONGO_URI.replace(/:[^:@]+@/, ':****@');
+    console.log('MongoDB URI:', uriForLog);
+    
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('MongoDB Connected');
+    console.log('MongoDB Connected Successfully');
+    
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.warn('MongoDB disconnected');
+    });
+    
+    return true;
   } catch (err) {
     console.error('MongoDB Connection Error:', err.message);
-    process.exit(1);
+    console.error('Full error:', err);
+    // Don't exit - let the server start and handle errors gracefully
+    throw err;
   }
 };
 

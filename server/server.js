@@ -4,16 +4,13 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import interviewRoutes from './routes/interviewRoutes.js';
 import { refresh } from './controllers/authController.js';
 
 const app = express();
-
-// Connect to MongoDB
-console.log("Attempting to connect to MongoDB with URI:", process.env.MONGO_URI);
-connectDB();
 
 // Middleware - CORS Configuration
 const allowedOrigins = [
@@ -80,12 +77,17 @@ app.get('/', (req, res) => {
   res.json({ message: 'AI Interview Coach API is running!' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ 
+    status: 'ok', 
+    database: dbStatus,
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Global Error Handler
+// Global Error Handler - Must be after all routes
 app.use((err, req, res, next) => {
   console.error("Unhandled server error:", err);
   console.error("Error stack:", err.stack);
@@ -94,3 +96,28 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
+
+// Start server and connect to database
+const PORT = process.env.PORT || 5000;
+
+const startServer = async () => {
+  try {
+    // Connect to MongoDB
+    await connectDB();
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    // Start server anyway - it can handle DB connection errors gracefully
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT} (Database connection failed)`);
+      console.error('Warning: Database is not connected. Some features may not work.');
+    });
+  }
+};
+
+startServer();
