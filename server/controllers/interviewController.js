@@ -1,6 +1,6 @@
 import Interview from '../models/Interview.js';
 import { generateText, perplexity } from '../utils/perplexityClient.js';
-import { analyzeAnswer, analyzeConfidence } from '../utils/ai.js';
+import { analyzeAnswer, analyzeConfidence, detectTopic } from '../utils/ai.js';
 
 const cleanQuestionText = (questionText) => {
   if (!questionText) return '';
@@ -96,6 +96,9 @@ export const voiceSubmit = async (req, res) => {
     } catch (err) {
       console.error("Confidence analysis failed:", err);
     }
+    
+    // Get role from interview for better evaluation
+    const role = interview.type || 'Software Engineer';
     let aiResult = {
       score: 50,
       feedback: "Unable to analyze answer",
@@ -107,14 +110,23 @@ export const voiceSubmit = async (req, res) => {
     } catch (e) {
       console.error("AI analysis failed:", e);
     }
+    // Combine AI analysis with confidence analysis
     const combined = {
-      score: aiResult.score || 50,
+      score: Math.max(0, Math.min(100, aiResult.score || 50)),
       feedback: aiResult.feedback || "No feedback available",
-      confidence: confidenceResult.score,
-      confidenceFeedback: confidenceResult.feedback,
+      confidence: Math.max(0, Math.min(100, confidenceResult.score || 50)),
+      confidenceFeedback: confidenceResult.feedback || "Unable to analyze confidence",
       suggestedAnswer: aiResult.suggestedAnswer || "Focus on clear explanations",
-      topic: aiResult.topic || "Programming"
+      topic: aiResult.topic || detectTopic(question),
+      strengths: aiResult.strengths || [],
+      improvements: aiResult.improvements || []
     };
+    
+    // Calculate weighted final score (70% content score, 30% confidence)
+    const weightedScore = Math.round(
+      (combined.score * 0.7) + (combined.confidence * 0.3)
+    );
+    combined.score = weightedScore;
     interview.responses.push({
       question,
       answer,

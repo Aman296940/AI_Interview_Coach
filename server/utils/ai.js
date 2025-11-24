@@ -12,6 +12,9 @@ const perplexityKey = process.env.PERPLEXITY_API_KEY;
 export function analyzeAnswer(question, answer) {
   return new Promise(async (resolve) => {
     try {
+      // First, do a quick local analysis for basic scoring
+      const localScore = calculateLocalScore(question, answer);
+      
       const response = await axios.post(
         'https://api.perplexity.ai/chat/completions',
         {
@@ -19,51 +22,258 @@ export function analyzeAnswer(question, answer) {
           messages: [
             {
               role: "system",
-              content: "You are an expert AI interview coach. Analyze the answer for technical accuracy and provide feedback. DO NOT include sample answers in your analysis.",
+              content: `You are an expert technical interview evaluator. Analyze the candidate's answer and provide:
+1. A numerical score from 0-100 based on:
+   - Technical accuracy (40%)
+   - Completeness (25%)
+   - Clarity and communication (20%)
+   - Relevance to the question (15%)
+2. Detailed feedback highlighting strengths and areas for improvement
+3. A topic/category for this question
+
+Respond in this EXACT JSON format (no markdown, no code blocks):
+{
+  "score": <number 0-100>,
+  "feedback": "<detailed feedback>",
+  "topic": "<topic name>",
+  "strengths": ["<strength1>", "<strength2>"],
+  "improvements": ["<improvement1>", "<improvement2>"]
+}`,
             },
             {
               role: "user",
-              content: `Question: ${question}\nAnswer: ${answer}\n\nProvide only analysis and feedback about this answer. Do not include sample answers.`,
+              content: `Question: ${question}\n\nCandidate's Answer: ${answer}\n\nEvaluate this answer and provide your analysis in the required JSON format.`,
             },
           ],
-          temperature: 0.7,
-          max_tokens: 400,
+          temperature: 0.3, // Lower temperature for more consistent scoring
+          max_tokens: 600,
         },
         {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${perplexityKey}`,
           },
-          timeout: 20000,
+          timeout: 25000,
         }
       );
 
-      const analysis = response.data.choices[0].message.content || "Good attempt at answering the question.";
-      const sampleAnswer = generateQuestionSpecificAnswer(question);
-
+      const aiResponse = response.data.choices[0].message.content || "";
+      
+      // Parse AI response to extract structured data
+      let parsedResult = parseAIResponse(aiResponse, localScore);
+      
+      // Generate a better suggested answer using AI
+      const suggestedAnswer = await generateSuggestedAnswer(question);
+      
       resolve({
-        score: Math.floor(Math.random() * 40) + 60,
-        feedback: analysis.trim(),
-        suggestedAnswer: sampleAnswer.trim(),
-        topic: detectTopic(question)
+        score: parsedResult.score,
+        feedback: parsedResult.feedback,
+        suggestedAnswer: suggestedAnswer || generateQuestionSpecificAnswer(question),
+        topic: parsedResult.topic || detectTopic(question),
+        strengths: parsedResult.strengths || [],
+        improvements: parsedResult.improvements || []
       });
     } catch (err) {
+      console.error("AI analysis error:", err);
+      // Fallback to local scoring if AI fails
+      const localScore = calculateLocalScore(question, answer);
       resolve({
-        score: 50,
-        feedback: "Unable to analyze answer. Please try again.",
+        score: localScore,
+        feedback: "Unable to get AI analysis. Based on local evaluation: " + getLocalFeedback(question, answer, localScore),
         suggestedAnswer: generateQuestionSpecificAnswer(question),
-        topic: "Programming"
+        topic: detectTopic(question)
       });
     }
   });
 }
 
+// Calculate a baseline score using local heuristics
+function calculateLocalScore(question, answer) {
+  if (!answer || answer.trim().length < 10) return 20;
+  
+  const answerLower = answer.toLowerCase();
+  const questionLower = question.toLowerCase();
+  
+  let score = 30; // Base score
+  
+  // Length scoring (0-20 points)
+  const wordCount = answer.trim().split(/\s+/).length;
+  if (wordCount >= 50) score += 20;
+  else if (wordCount >= 30) score += 15;
+  else if (wordCount >= 20) score += 10;
+  else if (wordCount >= 10) score += 5;
+  
+  // Relevance scoring (0-25 points) - check if answer addresses question keywords
+  const questionKeywords = extractKeywords(questionLower);
+  const answerKeywords = extractKeywords(answerLower);
+  const relevantKeywords = questionKeywords.filter(kw => 
+    answerKeywords.some(akw => akw.includes(kw) || kw.includes(akw))
+  );
+  const relevanceRatio = questionKeywords.length > 0 ? relevantKeywords.length / questionKeywords.length : 0.5;
+  score += Math.round(relevanceRatio * 25);
+  
+  // Technical depth (0-15 points) - check for technical terms
+  const technicalTerms = ['algorithm', 'complexity', 'data structure', 'optimization', 'performance', 
+    'scalability', 'design', 'architecture', 'system', 'database', 'api', 'security', 'testing'];
+  const technicalCount = technicalTerms.filter(term => answerLower.includes(term)).length;
+  score += Math.min(15, technicalCount * 2);
+  
+  // Structure and clarity (0-10 points)
+  const hasStructure = /(first|second|third|initially|then|finally|in conclusion|to summarize)/i.test(answer);
+  const hasExamples = /(example|instance|case|scenario|for instance)/i.test(answer);
+  if (hasStructure) score += 5;
+  if (hasExamples) score += 5;
+  
+  // Completeness (0-15 points) - longer, more detailed answers
+  if (answer.length > 200) score += 15;
+  else if (answer.length > 100) score += 10;
+  else if (answer.length > 50) score += 5;
+  
+  return Math.min(100, Math.max(0, score));
+}
+
+function extractKeywords(text) {
+  return text
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 3)
+    .filter(word => !['this', 'that', 'with', 'from', 'they', 'have', 'will', 'been', 'were', 'said'].includes(word.toLowerCase()));
+}
+
+function getLocalFeedback(question, answer, score) {
+  if (score < 40) {
+    return "The answer is too brief or doesn't address the question adequately. Try to provide more detail and directly answer what was asked.";
+  } else if (score < 60) {
+    return "The answer addresses the question but could be more comprehensive. Include more technical details and examples.";
+  } else if (score < 80) {
+    return "Good answer with relevant information. Consider adding more depth and structure to make it excellent.";
+  } else {
+    return "Strong answer that addresses the question well with good technical depth.";
+  }
+}
+
+// Parse AI response to extract structured data
+function parseAIResponse(aiResponse, fallbackScore) {
+  try {
+    // Try to extract JSON from the response
+    let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        score: Math.max(0, Math.min(100, parsed.score || fallbackScore)),
+        feedback: parsed.feedback || "Good attempt at answering the question.",
+        topic: parsed.topic || detectTopic(""),
+        strengths: parsed.strengths || [],
+        improvements: parsed.improvements || []
+      };
+    }
+    
+    // If no JSON, try to extract score from text
+    const scoreMatch = aiResponse.match(/score["\s:]*(\d+)/i) || aiResponse.match(/(\d+)\s*\/\s*100/i);
+    const extractedScore = scoreMatch ? parseInt(scoreMatch[1]) : fallbackScore;
+    
+    return {
+      score: Math.max(0, Math.min(100, extractedScore)),
+      feedback: aiResponse.trim() || "Good attempt at answering the question.",
+      topic: detectTopic(""),
+      strengths: [],
+      improvements: []
+    };
+  } catch (err) {
+    console.error("Error parsing AI response:", err);
+    return {
+      score: fallbackScore,
+      feedback: aiResponse.trim() || "Good attempt at answering the question.",
+      topic: detectTopic(""),
+      strengths: [],
+      improvements: []
+    };
+  }
+}
+
+// Generate a better suggested answer using AI
+async function generateSuggestedAnswer(question) {
+  try {
+    const response = await axios.post(
+      'https://api.perplexity.ai/chat/completions',
+      {
+        model: "sonar-pro",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert technical interviewer. Provide a clear, well-structured sample answer to the interview question. Focus on being concise but comprehensive.",
+          },
+          {
+            role: "user",
+            content: `Question: ${question}\n\nProvide a well-structured sample answer that demonstrates best practices for answering this type of interview question.`,
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: 500,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${perplexityKey}`,
+        },
+        timeout: 20000,
+      }
+    );
+    
+    return response.data.choices[0].message.content?.trim() || generateQuestionSpecificAnswer(question);
+  } catch (err) {
+    console.error("Error generating suggested answer:", err);
+    return generateQuestionSpecificAnswer(question);
+  }
+}
+
 export function analyzeConfidence(answer) {
-  const length = answer.trim().split(/\s+/).length;
-  if (!length) return { score: 10, feedback: "No answer provided." };
-  if (length < 5) return { score: 30, feedback: "Sounded unsure; work on fluency." };
-  if (length < 15) return { score: 60, feedback: "Moderately confident, but could be more detailed." };
-  return { score: 85, feedback: "Confident and fluent." };
+  if (!answer || typeof answer !== 'string' || !answer.trim()) {
+    return { score: 0, feedback: "No answer provided." };
+  }
+  
+  const trimmed = answer.trim();
+  const wordCount = trimmed.split(/\s+/).length;
+  const charCount = trimmed.length;
+  
+  // Base score from length
+  let score = 30;
+  if (wordCount >= 50) score = 85;
+  else if (wordCount >= 30) score = 75;
+  else if (wordCount >= 20) score = 65;
+  else if (wordCount >= 10) score = 50;
+  else if (wordCount >= 5) score = 35;
+  
+  // Adjust based on answer quality indicators
+  const hasFillerWords = /(um|uh|like|you know|actually|basically)/gi.test(trimmed);
+  if (hasFillerWords) score = Math.max(0, score - 10);
+  
+  const hasConfidentPhrases = /(i believe|i think|in my experience|based on|i would|i can)/gi.test(trimmed);
+  if (hasConfidentPhrases && wordCount > 15) score = Math.min(100, score + 5);
+  
+  // Check for structured response
+  const hasStructure = /(first|second|third|initially|then|finally|in conclusion)/i.test(trimmed);
+  if (hasStructure) score = Math.min(100, score + 5);
+  
+  // Penalize very short answers
+  if (wordCount < 10) score = Math.max(0, score - 15);
+  
+  const finalScore = Math.max(0, Math.min(100, score));
+  
+  let feedback = "";
+  if (finalScore >= 80) {
+    feedback = "Very confident and articulate delivery. Good use of structure and clear explanations.";
+  } else if (finalScore >= 65) {
+    feedback = "Confident delivery with good clarity. Consider reducing filler words and adding more detail.";
+  } else if (finalScore >= 50) {
+    feedback = "Moderately confident but could improve fluency. Practice speaking more clearly and reducing hesitation.";
+  } else if (finalScore >= 30) {
+    feedback = "Answer is too brief. Work on providing more detailed explanations and speaking with more confidence.";
+  } else {
+    feedback = "Answer needs significant improvement. Focus on providing complete thoughts and speaking clearly.";
+  }
+  
+  return { score: finalScore, feedback };
 }
 
 function generateQuestionSpecificAnswer(question) {
@@ -293,10 +503,17 @@ I would approach this problem by:
 5. Optimizing if needed`;
 }
 
-function detectTopic(question) {
+export function detectTopic(question) {
+  if (!question) return 'General';
   const keywords = question.toLowerCase();
   if (keywords.includes('algorithm') || keywords.includes('data structure')) return 'Data Structures';
   if (keywords.includes('system') || keywords.includes('design')) return 'System Design';
-  if (keywords.includes('hr') || keywords.includes('team') || keywords.includes('management')) return 'HR';
+  if (keywords.includes('database') || keywords.includes('sql') || keywords.includes('nosql')) return 'Database';
+  if (keywords.includes('api') || keywords.includes('rest') || keywords.includes('graphql')) return 'API Design';
+  if (keywords.includes('security') || keywords.includes('authentication') || keywords.includes('authorization')) return 'Security';
+  if (keywords.includes('hr') || keywords.includes('team') || keywords.includes('management') || keywords.includes('conflict')) return 'HR & Management';
+  if (keywords.includes('testing') || keywords.includes('test') || keywords.includes('qa')) return 'Testing';
+  if (keywords.includes('frontend') || keywords.includes('react') || keywords.includes('ui') || keywords.includes('ux')) return 'Frontend';
+  if (keywords.includes('backend') || keywords.includes('server')) return 'Backend';
   return 'Programming Concepts';
 }
