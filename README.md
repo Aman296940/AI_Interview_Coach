@@ -246,8 +246,10 @@ The backend needs to be deployed separately as Vercel is primarily for frontend/
 
 3. **Configure Service**
    - Railway will auto-detect Node.js
-   - Set **Root Directory** to `server`
+   - **Important**: Set **Root Directory** to `server` in the service settings
+   - Go to Settings → Source → Root Directory → Set to `server`
    - Railway will automatically detect `server.js` as the entry point
+   - The `railway.json` file will help with build configuration
 
 4. **Add Environment Variables**
    - Go to the "Variables" tab

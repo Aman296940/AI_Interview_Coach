@@ -1,4 +1,10 @@
 {
+  "name": "ai-interview-coach",
+  "version": "1.0.0",
+  "description": "AI Interview Coach - Full Stack Application",
+  "scripts": {
+    "start": "cd server && npm start"
+  },
   "dependencies": {
     "ai": "^4.3.16",
     "axios": "^1.9.0",
