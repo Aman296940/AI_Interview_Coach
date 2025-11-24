@@ -69,14 +69,12 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Handle preflight requests explicitly
-app.options('*', cors());
 app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/interview', interviewRoutes);
-app.post('/api/auth/refresh-token', refresh);
+// Note: refresh-token route is already defined in authRoutes
 
 app.get('/', (req, res) => {
   res.json({ message: 'AI Interview Coach API is running!' });
