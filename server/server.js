@@ -83,5 +83,9 @@ app.listen(PORT, () => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Unhandled server error:", err);
-  res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
+  console.error("Error stack:", err.stack);
+  res.status(err.status || 500).json({ 
+    error: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });

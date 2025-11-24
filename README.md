@@ -156,6 +156,7 @@ MONGO_URI=your_mongodb_connection_string
 
 # Authentication
 JWT_SECRET=your_jwt_secret_key
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key (optional, defaults to JWT_SECRET if not set)
 JWT_EXPIRE=7d
 
 # AI Integration
@@ -259,6 +260,7 @@ The backend needs to be deployed separately as Vercel is primarily for frontend/
      NODE_ENV=production
      MONGO_URI=your_mongodb_connection_string
      JWT_SECRET=your_jwt_secret_key
+     JWT_REFRESH_SECRET=your_jwt_refresh_secret_key (optional, defaults to JWT_SECRET)
      JWT_EXPIRE=7d
      PERPLEXITY_API_KEY=your_perplexity_api_key
      FRONTEND_URL=https://your-vercel-app.vercel.app

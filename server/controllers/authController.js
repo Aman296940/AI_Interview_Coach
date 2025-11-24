@@ -6,6 +6,7 @@ import RefreshToken from '../models/RefreshToken.js';
 
 // Use your secret from environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your_jwt_secret';
 
 export const login = async (req, res, next) => {
   try {
@@ -21,8 +22,8 @@ export const login = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
-    const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+    const accessToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "15m" });
+    const refreshToken = jwt.sign({ id: user._id }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
     await RefreshToken.create({ token: refreshToken, user: user._id });
     res.json({
       success: true,
@@ -32,6 +33,7 @@ export const login = async (req, res, next) => {
     });
 
   } catch (err) {
+    console.error('Login error:', err);
     next(err);
   }
 };
@@ -48,12 +50,12 @@ export const register = async (req, res, next) => {
     const newUser = await User.create({ name, email, password: hashed });
     const accessToken = jwt.sign(
     { id: newUser._id },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: "15m" }
     );
     const refreshToken = jwt.sign(
       { id: newUser._id },
-      process.env.JWT_REFRESH_SECRET,
+      JWT_REFRESH_SECRET,
       { expiresIn: "7d" }
     );
 
@@ -66,6 +68,7 @@ export const register = async (req, res, next) => {
     });
 
   } catch (err) {
+    console.error('Register error:', err);
     next(err);
   }
 };
@@ -79,8 +82,8 @@ export const refresh = async (req, res) => {
   if (!stored) return res.status(403).json({ message: "Forbidden" });
 
   try {
-    const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const accessToken = jwt.sign({ id: payload.id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const accessToken = jwt.sign({ id: payload.id }, JWT_SECRET, { expiresIn: "15m" });
     return res.json({ accessToken });
   } catch {
     return res.status(403).json({ message: "Invalid refresh token" });
