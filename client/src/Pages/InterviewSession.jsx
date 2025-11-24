@@ -29,17 +29,47 @@ const InterviewSession = () => {
     transcript,
     listening,
     resetTranscript,
-    browserSupportsSpeechRecognition
+    browserSupportsSpeechRecognition,
+    isMicrophoneAvailable
   } = useSpeechRecognition();
 
   useEffect(() => {
     fetchQuestions();
+    
+    // Log browser support info
+    console.log('Browser support check:', {
+      browserSupportsSpeechRecognition,
+      isSecureContext: window.isSecureContext,
+      userAgent: navigator.userAgent,
+      hasMediaDevices: !!navigator.mediaDevices,
+      hasGetUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    });
+    
+    // Check if SpeechRecognition is available
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      console.log('Native SpeechRecognition available:', !!SpeechRecognition);
+    }
+    
+    // Check browser support on mount
+    if (!browserSupportsSpeechRecognition) {
+      setVoiceError('Your browser does not support speech recognition. Please use Chrome, Edge, or another Chromium-based browser for the best experience.');
+    }
+    
+    // Check microphone permission
     checkMicrophonePermission();
   }, []);
 
   useEffect(() => {
-    if (transcript) setCurrentAnswer(transcript);
+    if (transcript) {
+      console.log('Transcript updated:', transcript);
+      setCurrentAnswer(transcript);
+    }
   }, [transcript]);
+  
+  useEffect(() => {
+    console.log('Listening state changed:', listening);
+  }, [listening]);
 
   const cleanQuestionText = (questionText) => {
     if (!questionText) return '';
@@ -53,13 +83,31 @@ const InterviewSession = () => {
 
   const checkMicrophonePermission = async () => {
     try {
+      // Check if we're in a secure context (HTTPS or localhost)
+      if (!window.isSecureContext) {
+        setHasPermission(false);
+        setVoiceError('Speech recognition requires HTTPS. Please use https:// or localhost.');
+        console.warn('Not in secure context');
+        return;
+      }
+      
+      console.log('Requesting microphone permission...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted');
       setHasPermission(true);
       setVoiceError(null);
       stream.getTracks().forEach(track => track.stop());
-    } catch {
+    } catch (error) {
+      console.error('Microphone permission error:', error);
       setHasPermission(false);
-      setVoiceError('Microphone access denied. Please enable microphone permissions.');
+      const errorMessage = error.name === 'NotAllowedError' 
+        ? 'Microphone access denied. Please enable microphone permissions in your browser settings.'
+        : error.name === 'NotFoundError'
+        ? 'No microphone found. Please connect a microphone and try again.'
+        : error.name === 'NotReadableError'
+        ? 'Microphone is being used by another application. Please close other apps using the microphone.'
+        : `Microphone error: ${error.message}`;
+      setVoiceError(errorMessage);
     }
   };
 
@@ -74,17 +122,51 @@ const InterviewSession = () => {
   };
 
   const startListening = async () => {
-    if (!hasPermission) {
-      await checkMicrophonePermission();
-      return;
-    }
+    console.log('startListening called', { hasPermission, browserSupportsSpeechRecognition, isSecureContext: window.isSecureContext });
+    
+    // Check browser support first
     if (!browserSupportsSpeechRecognition) {
-      setVoiceError('Your browser does not support speech recognition.');
+      const errorMsg = 'Your browser does not support speech recognition. Please use Chrome, Edge, or another Chromium-based browser.';
+      setVoiceError(errorMsg);
+      console.error('Browser does not support speech recognition');
       return;
     }
-    resetTranscript();
-    setVoiceError(null);
-    SpeechRecognition.startListening({ continuous: true, language: 'en-US' });
+    
+    // Check secure context
+    if (!window.isSecureContext) {
+      const errorMsg = 'Speech recognition requires HTTPS. Please use https:// or localhost.';
+      setVoiceError(errorMsg);
+      console.error('Not in secure context');
+      return;
+    }
+    
+    // Check and request permission if needed
+    if (!hasPermission) {
+      console.log('No permission, requesting...');
+      await checkMicrophonePermission();
+      if (!hasPermission) {
+        console.error('Permission denied after request');
+        return;
+      }
+    }
+    
+    try {
+      console.log('Starting speech recognition...');
+      resetTranscript();
+      setVoiceError(null);
+      // SpeechRecognition.startListening is not async in v4
+      SpeechRecognition.startListening({ 
+        continuous: true, 
+        language: 'en-US',
+        interimResults: true
+      });
+      console.log('Speech recognition started');
+    } catch (error) {
+      console.error('Speech recognition error:', error);
+      setVoiceError(`Failed to start speech recognition: ${error.message || 'Unknown error'}`);
+      // Try to check permissions again
+      await checkMicrophonePermission();
+    }
   };
 
   const stopListening = () => SpeechRecognition.stopListening();
@@ -224,6 +306,18 @@ const InterviewSession = () => {
             <div className="character-counter">
               {currentAnswer.length} characters
             </div>
+            {listening && transcript && (
+              <div className="transcript-preview" style={{ 
+                marginTop: '10px', 
+                padding: '10px', 
+                background: '#f0f0f0', 
+                borderRadius: '4px',
+                fontSize: '14px',
+                color: '#666'
+              }}>
+                <strong>Live transcript:</strong> {transcript}
+              </div>
+            )}
           </div>
 
           <div className="voice-controls">
@@ -241,7 +335,16 @@ const InterviewSession = () => {
               <button
                 className={`voice-button start-recording ${listening ? 'active' : ''}`}
                 onClick={startListening}
-                disabled={listening || !hasPermission || isSubmitting}
+                disabled={listening || !browserSupportsSpeechRecognition || isSubmitting || (!window.isSecureContext && window.location.protocol !== 'https:')}
+                title={
+                  !browserSupportsSpeechRecognition 
+                    ? 'Browser does not support speech recognition'
+                    : !window.isSecureContext && window.location.protocol !== 'https:'
+                    ? 'HTTPS required for speech recognition'
+                    : listening
+                    ? 'Recording in progress...'
+                    : 'Click to start recording'
+                }
               >
                 <span className="button-icon">🎤</span>
                 {listening ? 'Recording...' : 'Start Recording'}
@@ -275,11 +378,50 @@ const InterviewSession = () => {
               </div>
               <div className="status-item">
                 <span className="status-label">Microphone:</span>
-                <span className={`status-value ${hasPermission ? 'allowed' : 'denied'}`}>
-                  {hasPermission ? '✅ Allowed' : '❌ Denied'}
+                <span className={`status-value ${hasPermission && isMicrophoneAvailable !== false ? 'allowed' : 'denied'}`}>
+                  {hasPermission && isMicrophoneAvailable !== false ? '✅ Allowed' : '❌ Denied'}
                 </span>
               </div>
+              <div className="status-item">
+                <span className="status-label">Secure Context:</span>
+                <span className={`status-value ${window.isSecureContext ? 'allowed' : 'denied'}`}>
+                  {window.isSecureContext ? '✅ Yes' : '❌ No (HTTPS required)'}
+                </span>
+              </div>
+              <div className="status-item">
+                <span className="status-label">Status:</span>
+                <span className={`status-value ${listening ? 'allowed' : 'denied'}`}>
+                  {listening ? '🔴 Recording' : '⚪ Idle'}
+                </span>
+              </div>
+              {transcript && (
+                <div className="status-item">
+                  <span className="status-label">Transcript Length:</span>
+                  <span className="status-value allowed">
+                    {transcript.length} chars
+                  </span>
+                </div>
+              )}
             </div>
+
+            {(!browserSupportsSpeechRecognition || !hasPermission || !window.isSecureContext) && (
+              <div className="voice-troubleshooting">
+                <h4>🔧 Troubleshooting Voice Recognition</h4>
+                <ul>
+                  {!browserSupportsSpeechRecognition && (
+                    <li>Use Chrome, Edge, or another Chromium-based browser for best support</li>
+                  )}
+                  {!window.isSecureContext && (
+                    <li>Speech recognition requires HTTPS. Make sure you're using <code>https://</code> or <code>localhost</code></li>
+                  )}
+                  {!hasPermission && (
+                    <li>Click the address bar and allow microphone access, or check your browser's privacy settings</li>
+                  )}
+                  <li>Make sure your microphone is connected and working</li>
+                  <li>Try refreshing the page after granting permissions</li>
+                </ul>
+              </div>
+            )}
           </div>
 
           <div className="submit-container">

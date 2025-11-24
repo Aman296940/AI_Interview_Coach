@@ -1,11 +1,24 @@
 // Frontend Question Component:
 // client/src/components/Interview/QuestionCard.jsx
 import { useState } from 'react';
-import { useSpeechRecognition } from 'react-speech-recognition';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 export default function QuestionCard({ question, onSubmit }) {
   const [answer, setAnswer] = useState('');
-  const { transcript, listening, startListening, stopListening } = useSpeechRecognition();
+  const { transcript, listening, resetTranscript, browserSupportsSpeechRecognition } = useSpeechRecognition();
+  
+  const startListening = () => {
+    if (!browserSupportsSpeechRecognition) {
+      alert('Your browser does not support speech recognition. Please use Chrome or Edge.');
+      return;
+    }
+    resetTranscript();
+    SpeechRecognition.startListening({ continuous: true, language: 'en-US' });
+  };
+  
+  const stopListening = () => {
+    SpeechRecognition.stopListening();
+  };
 
   const handleSubmit = () => {
     onSubmit({

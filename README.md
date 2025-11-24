@@ -1,10 +1,10 @@
-# Interview AI Coach
+# AI Interview Coach
 
-> An AI-powered interview practice platform that helps users improve their interview skills through personalized feedback and scoring.
+An AI-powered interview practice platform that helps users improve their interview skills through personalized feedback and scoring.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![Node.js](https://img.shields.io/badge/Node.js-16.x+-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18.x+-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19.x+-blue.svg)](https://reactjs.org/)
 
 ## Table of Contents
 
@@ -15,9 +15,10 @@
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Voice-to-Text Feature](#voice-to-text-feature)
+- [Deployment](#deployment)
 - [API Documentation](#api-documentation)
-- [Development](#development)
-- [Roadmap](#roadmap)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -36,24 +37,28 @@ Interview AI Coach is a comprehensive platform where users can practice mock int
 ## Features
 
 ### 🎤 Interview Experience
+
 - AI-powered question generation via Perplexity API
 - Support for both text and voice-based answers
 - Real-time answer evaluation and scoring (0-100 scale)
 - Confidence level assessment for voice responses
 
 ### 📊 Feedback & Analytics
+
 - Detailed feedback on each answer
 - Suggested improvements and better answer examples
 - Personalized study topics based on performance gaps
 - Final weighted score calculation across all responses
 
 ### 🔐 User Management
+
 - Secure authentication system with JWT tokens
 - Password hashing with bcrypt
 - User session management
 - Personal interview history tracking
 
 ### 📱 Interactive Dashboard
+
 - Clean, responsive UI built with React and TailwindCSS
 - Interview session management
 - Detailed performance analytics
@@ -62,13 +67,16 @@ Interview AI Coach is a comprehensive platform where users can practice mock int
 ## Tech Stack
 
 ### Frontend
-- **Framework**: React 18+ with modern hooks
+
+- **Framework**: React 19 with Vite
 - **Styling**: TailwindCSS for utility-first styling
-- **Components**: Shadcn/UI component library
+- **Components**: Material-UI and custom components
 - **HTTP Client**: Axios for API communication
 - **Build Tool**: Vite for fast development and building
+- **Voice Recognition**: react-speech-recognition for voice input
 
 ### Backend
+
 - **Runtime**: Node.js with Express.js framework
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT tokens with bcryptjs hashing
@@ -76,37 +84,37 @@ Interview AI Coach is a comprehensive platform where users can practice mock int
 - **API Integration**: Perplexity AI SDK for intelligent question generation
 
 ### AI Integration
+
 - **Question Generation**: [Perplexity AI API](https://www.perplexity.ai/)
 - **Natural Language Processing**: Advanced AI models for answer evaluation
 
 ## Project Structure
 
 ```
-Interview-AI-Coach/
-├── frontend/                 # React frontend application
+AI_Interview_Coach/
+├── client/                 # React frontend
 │   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── pages/          # Application pages
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── utils/          # Helper functions
-│   │   └── styles/         # Global styles
-│   ├── public/             # Static assets
-│   └── package.json        # Frontend dependencies
-├── backend/                 # Node.js backend server
-│   ├── server.js           # Application entry point
-│   ├── models/             # Mongoose database schemas
-│   ├── routes/             # Express route definitions
-│   ├── controllers/        # Business logic handlers
-│   ├── middleware/         # Custom middleware functions
-│   ├── utils/              # Helper utilities
-│   ├── .env                # Environment variables
-│   └── package.json        # Backend dependencies
-└── README.md               # Project documentation
+│   │   ├── Components/     # Reusable components
+│   │   ├── Pages/          # Page components
+│   │   ├── Services/       # API service
+│   │   ├── contexts/       # React contexts
+│   │   └── hooks/          # Custom hooks
+│   └── package.json
+├── server/                 # Node.js backend
+│   ├── config/             # Database config
+│   ├── controllers/        # Route controllers
+│   ├── models/             # Mongoose models
+│   ├── routes/             # Express routes
+│   ├── utils/              # Utility functions
+│   └── server.js           # Entry point
+├── vercel.json             # Vercel configuration
+└── README.md
 ```
 
 ## Installation
 
 ### Prerequisites
+
 - Node.js (version 16.x or higher)
 - MongoDB (local installation or MongoDB Atlas)
 - npm or yarn package manager
@@ -116,19 +124,19 @@ Interview-AI-Coach/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/interview-ai-coach.git
-   cd interview-ai-coach
+   git clone https://github.com/Aman296940/AI_Interview_Coach.git
+   cd AI_Interview_Coach
    ```
 
 2. **Install backend dependencies**
    ```bash
-   cd backend
+   cd server
    npm install
    ```
 
 3. **Install frontend dependencies**
    ```bash
-   cd ../frontend
+   cd ../client
    npm install
    ```
 
@@ -136,7 +144,7 @@ Interview-AI-Coach/
 
 ### Backend Environment Setup
 
-Create a `.env` file in the `backend/` directory:
+Create a `.env` file in the `server/` directory:
 
 ```env
 # Server Configuration
@@ -144,7 +152,7 @@ PORT=5000
 NODE_ENV=development
 
 # Database
-MONGO_URI=your_mongo_connection_string
+MONGO_URI=your_mongodb_connection_string
 
 # Authentication
 JWT_SECRET=your_jwt_secret_key
@@ -153,17 +161,16 @@ JWT_EXPIRE=7d
 # AI Integration
 PERPLEXITY_API_KEY=your_perplexity_api_key
 
-# Optional: Logging
-LOG_LEVEL=info
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:5173
 ```
 
 ### Frontend Configuration
 
-Create a `.env` file in the `frontend/` directory:
+Create a `.env` file in the `client/` directory:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=Interview AI Coach
+VITE_API_URL=http://localhost:5000
 ```
 
 ## Usage
@@ -172,17 +179,17 @@ VITE_APP_NAME=Interview AI Coach
 
 1. **Start the backend server**
    ```bash
-   cd backend
+   cd server
    npm start
    ```
    Server runs on: `http://localhost:5000`
 
-2. **Start the frontend development server**
+2. **Start the frontend dev server**
    ```bash
-   cd frontend
+   cd client
    npm run dev
    ```
-   Frontend runs on: `http://localhost:3000`
+   Frontend runs on: `http://localhost:5173`
 
 ### Using the Platform
 
@@ -192,6 +199,40 @@ VITE_APP_NAME=Interview AI Coach
 4. **Review Feedback**: Receive instant scoring, feedback, and improvement suggestions
 5. **Track Progress**: Monitor your performance over time through the dashboard
 
+## 🎤 Voice-to-Text Feature
+
+The voice-to-text feature uses the Web Speech API. For best results:
+
+- **Browser**: Use Chrome, Edge, or another Chromium-based browser
+- **HTTPS**: Required for speech recognition (automatically provided by Vercel in production)
+- **Permissions**: Grant microphone access when prompted
+- **Microphone**: Ensure your microphone is connected and working
+
+### Troubleshooting Voice Issues
+
+If voice-to-text isn't working:
+
+1. Check browser console for errors
+2. Verify microphone permissions in browser settings
+3. Ensure you're using HTTPS or localhost
+4. Try refreshing the page after granting permissions
+5. Check the status indicators in the interview session
+
+## 📱 Deployment
+
+### Deploy to Vercel
+
+1. **Deploy Backend** (Railway/Render recommended)
+   - Set root directory to `server`
+   - Add all environment variables from `server/.env`
+   - Note the deployment URL
+
+2. **Deploy Frontend to Vercel**
+   - Connect your GitHub repository
+   - Set root directory to `client`
+   - Add environment variable: `VITE_API_URL=your_backend_url`
+   - Deploy!
+
 ## API Documentation
 
 ### Authentication Endpoints
@@ -200,41 +241,56 @@ VITE_APP_NAME=Interview AI Coach
 |--------|----------|-------------|
 | POST | `/api/auth/register` | Register a new user |
 | POST | `/api/auth/login` | User login and token generation |
-| GET | `/api/auth/profile` | Get user profile information |
+| POST | `/api/auth/refresh-token` | Refresh JWT token |
 
 ### Interview Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/interview/start` | Generate new interview questions |
-| POST | `/api/interview/answer` | Submit answer and receive AI feedback |
-| GET | `/api/interview/:id` | Retrieve specific interview session |
-| GET | `/api/interview/history` | Get user's interview history |
+| GET | `/api/interview/questions?role=...&level=...` | Get interview questions |
+| POST | `/api/interview/voice-submit` | Submit answer for feedback |
+| POST | `/api/interview/finalize` | Finalize interview session |
+| GET | `/api/interview/:id` | Get interview details |
 
 ### Request/Response Examples
 
 #### Start Interview
+
 ```javascript
 // Request
-POST /api/interview/start
-{
-  "category": "software-engineering",
-  "difficulty": "intermediate",
-  "questionCount": 5
-}
+GET /api/interview/questions?role=software-engineer&level=intermediate
 
 // Response
 {
-  "interviewId": "64a7b8c9d1e2f3g4h5i6j7k8",
   "questions": [
-    {
-      "id": "q1",
-      "text": "Tell me about your experience with React.js",
-      "category": "technical"
-    }
+    "Tell me about your experience with React.js",
+    "How do you handle state management in large applications?",
+    ...
   ]
 }
 ```
+
+## 🐛 Troubleshooting
+
+### Build Issues
+- Ensure all dependencies are installed
+- Check Node.js version (v16+)
+- Clear `node_modules` and reinstall if needed
+
+### API Connection Issues
+- Verify `VITE_API_URL` matches your backend URL
+- Check CORS configuration in backend
+- Ensure backend server is running
+
+### Database Issues
+- Verify MongoDB connection string
+- Check MongoDB is running (if local)
+- Verify network access (if MongoDB Atlas)
+
+### Voice Recording Issues
+- Ensure microphone permissions are enabled in browser
+- Use Chrome or Edge for best compatibility
+- Check that you're on HTTPS or localhost
 
 ## Development
 
@@ -243,9 +299,8 @@ POST /api/interview/start
 **Backend**
 ```bash
 npm start          # Start production server
-npm run dev        # Start development server with nodemon
-npm run test       # Run test suite
-npm run lint       # Run ESLint
+npm run dev        # Start development server
+npm test           # Run test suite
 ```
 
 **Frontend**
@@ -253,7 +308,6 @@ npm run lint       # Run ESLint
 npm run dev        # Start development server
 npm run build      # Build for production
 npm run preview    # Preview production build
-npm run test       # Run tests
 ```
 
 ### Development Guidelines
@@ -262,14 +316,6 @@ npm run test       # Run tests
 - Write unit tests for new features
 - Follow REST API conventions
 - Implement proper error handling
-- Use TypeScript for type safety (recommended)
-
-### Common Issues
-
-- **MongoDB Connection**: Ensure MongoDB is running and connection string is correct
-- **API Key**: Verify Perplexity API key is valid and has sufficient credits
-- **CORS Issues**: Check frontend and backend URLs match your environment
-- **Voice Recording**: Ensure microphone permissions are enabled in browser
 
 ## Roadmap
 
@@ -306,6 +352,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-**Built with ❤️ by [Aman Bajoria]**
+**Built with ❤️ by [Aman Bajoria](https://github.com/Aman296940)**
 
 For support or questions, please open an issue on GitHub.

@@ -1,7 +1,21 @@
 import axios from "axios";
 
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // In production, use environment variable or default to relative path
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In development, use localhost
+  if (import.meta.env.DEV) {
+    return "http://localhost:5000";
+  }
+  // In production build, use relative path (will work with Vercel serverless functions)
+  return "";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+  baseURL: getApiUrl(),
   headers: { "Content-Type": "application/json" },
 });
 
