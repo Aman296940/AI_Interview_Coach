@@ -35,17 +35,6 @@ const InterviewSession = () => {
 
   useEffect(() => {
     fetchQuestions();
-    
-    // Log browser support info
-    console.log('Browser support check:', {
-      browserSupportsSpeechRecognition,
-      isSecureContext: window.isSecureContext,
-      userAgent: navigator.userAgent,
-      hasMediaDevices: !!navigator.mediaDevices,
-      hasGetUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
-    });
-    
-    // Check if SpeechRecognition is available
     if (typeof window !== 'undefined') {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       console.log('Native SpeechRecognition available:', !!SpeechRecognition);
@@ -62,14 +51,9 @@ const InterviewSession = () => {
 
   useEffect(() => {
     if (transcript) {
-      console.log('Transcript updated:', transcript);
       setCurrentAnswer(transcript);
     }
   }, [transcript]);
-  
-  useEffect(() => {
-    console.log('Listening state changed:', listening);
-  }, [listening]);
 
   const cleanQuestionText = (questionText) => {
     if (!questionText) return '';
@@ -83,11 +67,9 @@ const InterviewSession = () => {
 
   const checkMicrophonePermission = async () => {
     try {
-      // Check if we're in a secure context (HTTPS or localhost)
       if (!window.isSecureContext) {
         setHasPermission(false);
         setVoiceError('Speech recognition requires HTTPS. Please use https:// or localhost.');
-        console.warn('Not in secure context');
         return;
       }
       
@@ -140,31 +122,24 @@ const InterviewSession = () => {
       return;
     }
     
-    // Check and request permission if needed
     if (!hasPermission) {
-      console.log('No permission, requesting...');
       await checkMicrophonePermission();
       if (!hasPermission) {
-        console.error('Permission denied after request');
         return;
       }
     }
     
     try {
-      console.log('Starting speech recognition...');
       resetTranscript();
       setVoiceError(null);
-      // SpeechRecognition.startListening is not async in v4
       SpeechRecognition.startListening({ 
         continuous: true, 
         language: 'en-US',
         interimResults: true
       });
-      console.log('Speech recognition started');
     } catch (error) {
       console.error('Speech recognition error:', error);
       setVoiceError(`Failed to start speech recognition: ${error.message || 'Unknown error'}`);
-      // Try to check permissions again
       await checkMicrophonePermission();
     }
   };

@@ -1,5 +1,3 @@
-// Frontend Question Component:
-// client/src/components/Interview/QuestionCard.jsx
 import { useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 

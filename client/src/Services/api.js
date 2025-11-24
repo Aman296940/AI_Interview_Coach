@@ -1,17 +1,12 @@
 import axios from "axios";
 
-// Determine API URL based on environment
 const getApiUrl = () => {
-  // Always check for environment variable first
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In development, use localhost
   if (import.meta.env.DEV) {
     return "http://localhost:5000";
   }
-  // In production, require VITE_API_URL to be set
-  // This should be your Railway backend URL (e.g., https://your-app.railway.app)
   console.error("VITE_API_URL environment variable is not set in production!");
   throw new Error("API URL is not configured. Please set VITE_API_URL environment variable.");
 };

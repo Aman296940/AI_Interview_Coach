@@ -12,19 +12,15 @@ export default function InterviewSetup() {
     try {
       setLoading(true);
       
-      // Make API call to create interview
-      // The api instance already includes Authorization header via interceptor
       const response = await api.post('/api/interview/start-interview', {
         type: role,
         difficulty: level
       });
 
-      // Navigate only after successful API call
       navigate(`/interview?role=${role}&level=${level}&interviewId=${response.data.interviewId}`);
       
     } catch (error) {
       console.error('Failed to start interview:', error);
-      // Handle error (show toast, alert, etc.)
     } finally {
       setLoading(false);
     }

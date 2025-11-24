@@ -23,7 +23,6 @@ export default function InterviewDetail() {
   if (loading) return <div className="p-6">Loading…</div>;
   if (!interview) return <div className="p-6">Interview not found.</div>;
 
-  // Use 'responses' instead of 'sessions'
   const answers = Array.isArray(interview.responses) ? interview.responses : [];
 
   return (
