@@ -314,14 +314,17 @@ The backend needs to be deployed separately as Vercel is primarily for frontend/
    - **Output Directory**: `dist` (auto-detected)
    - **Install Command**: `npm install` (auto-detected)
 
-4. **Add Environment Variables**
+4. **Add Environment Variables** ⚠️ **CRITICAL STEP**
    - Go to "Environment Variables" section
-   - Add the following:
+   - **MUST ADD**: `VITE_API_URL` with your Railway backend URL:
      ```
      VITE_API_URL=https://your-backend-url.railway.app
      ```
-   - Replace with your actual backend URL from Step 1
-   - **Important**: For production, make sure to select "Production", "Preview", and "Development" environments
+   - Replace `https://your-backend-url.railway.app` with your actual Railway backend URL from Step 1
+   - **Important**: 
+     - Select **ALL** environments: "Production", "Preview", and "Development"
+     - Without this variable, API calls will fail with 405 errors
+     - The URL should NOT have a trailing slash (e.g., `https://app.railway.app` not `https://app.railway.app/`)
 
 5. **Deploy**
    - Click "Deploy"
@@ -370,7 +373,13 @@ After deploying the frontend, update your backend's `FRONTEND_URL`:
   - Only `client/node_modules` and `server/node_modules` should exist
 
 - **Build Fails**: Check build logs in Vercel dashboard
-- **API Not Connecting**: Verify `VITE_API_URL` is set correctly
+- **405 (Method Not Allowed) Errors on API calls**:
+  - This means `VITE_API_URL` is not set in Vercel environment variables
+  - Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+  - Add `VITE_API_URL` with your Railway backend URL (e.g., `https://your-app.railway.app`)
+  - Make sure to select all environments (Production, Preview, Development)
+  - Redeploy after adding the variable
+- **API Not Connecting**: Verify `VITE_API_URL` is set correctly and matches your Railway backend URL
 - **404 Errors**: Ensure `vercel.json` rewrites are configured correctly
 
 #### Backend Issues

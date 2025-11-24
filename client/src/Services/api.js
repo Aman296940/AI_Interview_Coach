@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // In production, use environment variable or default to relative path
+  // Always check for environment variable first
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -10,8 +10,10 @@ const getApiUrl = () => {
   if (import.meta.env.DEV) {
     return "http://localhost:5000";
   }
-  // In production build, use relative path (will work with Vercel serverless functions)
-  return "";
+  // In production, require VITE_API_URL to be set
+  // This should be your Railway backend URL (e.g., https://your-app.railway.app)
+  console.error("VITE_API_URL environment variable is not set in production!");
+  throw new Error("API URL is not configured. Please set VITE_API_URL environment variable.");
 };
 
 const api = axios.create({
