@@ -389,7 +389,14 @@ After deploying the frontend, update your backend's `FRONTEND_URL`:
 #### Backend Issues
 
 - **Server Not Starting**: Check logs in Railway/Render dashboard
-- **Database Connection**: Verify MongoDB Atlas allows connections from your hosting IP (usually 0.0.0.0/0)
+- **Database Connection**: 
+  - Verify MongoDB Atlas allows connections from your hosting IP (usually 0.0.0.0/0)
+  - **Important**: If your MongoDB password contains special characters (like `@`, `#`, `%`, etc.), you MUST URL-encode them in the connection string:
+    - `@` becomes `%40`
+    - `#` becomes `%23`
+    - `%` becomes `%25`
+    - Example: Password `Aman@2003` should be `Aman%402003` in the connection string
+    - Connection string format: `mongodb+srv://username:encoded_password@cluster.mongodb.net/`
 - **CORS Errors** (e.g., "No 'Access-Control-Allow-Origin' header"):
   - The backend automatically allows all `.vercel.app` domains, so this should work automatically
   - However, ensure `FRONTEND_URL` in Railway matches your Vercel URL exactly
