@@ -15,7 +15,7 @@ const app = express();
 console.log("Attempting to connect to MongoDB with URI:", process.env.MONGO_URI);
 connectDB();
 
-// Middleware
+// Middleware - CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -23,17 +23,46 @@ const allowedOrigins = [
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
 ].filter(Boolean);
 
+// Add Vercel URL pattern matching (for preview deployments)
+const isVercelUrl = (origin) => {
+  if (!origin) return false;
+  return origin.includes('.vercel.app') || origin.includes('vercel.app');
+};
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
     }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`CORS: Allowing origin from allowed list: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // Allow Vercel URLs (for production and preview deployments)
+    if (isVercelUrl(origin)) {
+      console.log(`CORS: Allowing Vercel origin: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`CORS: Allowing origin in development: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // Log blocked origin for debugging
+    console.warn(`CORS: Blocked origin: ${origin}`);
+    console.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+    callback(new Error(`Not allowed by CORS: ${origin}`));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 

@@ -251,7 +251,7 @@ The backend needs to be deployed separately as Vercel is primarily for frontend/
    - Railway will automatically detect `server.js` as the entry point
    - The `railway.json` file will help with build configuration
 
-4. **Add Environment Variables**
+4. **Add Environment Variables** ⚠️ **CRITICAL FOR CORS**
    - Go to the "Variables" tab
    - Add all variables from your `server/.env`:
      ```
@@ -263,7 +263,9 @@ The backend needs to be deployed separately as Vercel is primarily for frontend/
      PERPLEXITY_API_KEY=your_perplexity_api_key
      FRONTEND_URL=https://your-vercel-app.vercel.app
      ```
-   - **Note**: Update `FRONTEND_URL` after deploying frontend
+   - **CRITICAL**: Set `FRONTEND_URL` to your Vercel frontend URL (e.g., `https://ai-interview-coach-95gk5.vercel.app`)
+   - **Note**: The CORS configuration will also automatically allow all `.vercel.app` domains, but setting `FRONTEND_URL` is still recommended
+   - **After deploying frontend**: Update `FRONTEND_URL` with your actual Vercel URL
 
 5. **Deploy**
    - Railway will automatically deploy
@@ -386,7 +388,13 @@ After deploying the frontend, update your backend's `FRONTEND_URL`:
 
 - **Server Not Starting**: Check logs in Railway/Render dashboard
 - **Database Connection**: Verify MongoDB Atlas allows connections from your hosting IP (usually 0.0.0.0/0)
-- **CORS Errors**: Ensure `FRONTEND_URL` matches your Vercel URL exactly
+- **CORS Errors** (e.g., "No 'Access-Control-Allow-Origin' header"):
+  - The backend automatically allows all `.vercel.app` domains, so this should work automatically
+  - However, ensure `FRONTEND_URL` in Railway matches your Vercel URL exactly
+  - Check Railway logs for CORS-related messages (the server logs which origins are allowed/blocked)
+  - Verify the Vercel URL format: `https://your-app.vercel.app` (no trailing slash)
+  - If using a custom domain, add it to `FRONTEND_URL` in Railway
+  - After updating `FRONTEND_URL`, restart/redeploy the Railway service
 
 #### Common Environment Variable Mistakes
 
