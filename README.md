@@ -220,18 +220,178 @@ If voice-to-text isn't working:
 
 ## 📱 Deployment
 
-### Deploy to Vercel
+### Prerequisites
 
-1. **Deploy Backend** (Railway/Render recommended)
-   - Set root directory to `server`
-   - Add all environment variables from `server/.env`
-   - Note the deployment URL
+Before deploying, ensure you have:
+- A GitHub account and repository pushed to GitHub
+- A Vercel account (free tier works)
+- A backend hosting service account (Railway, Render, or similar)
+- MongoDB Atlas account (or your MongoDB connection string)
+- Perplexity API key
 
-2. **Deploy Frontend to Vercel**
+### Step 1: Deploy Backend Server
+
+The backend needs to be deployed separately as Vercel is primarily for frontend/serverless functions. Recommended platforms:
+
+#### Option A: Deploy to Railway (Recommended)
+
+1. **Sign up/Login to Railway**
+   - Go to [railway.app](https://railway.app)
+   - Sign up with your GitHub account
+
+2. **Create New Project**
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your `AI_Interview_Coach` repository
+
+3. **Configure Service**
+   - Railway will auto-detect Node.js
+   - Set **Root Directory** to `server`
+   - Railway will automatically detect `server.js` as the entry point
+
+4. **Add Environment Variables**
+   - Go to the "Variables" tab
+   - Add all variables from your `server/.env`:
+     ```
+     PORT=5000
+     NODE_ENV=production
+     MONGO_URI=your_mongodb_connection_string
+     JWT_SECRET=your_jwt_secret_key
+     JWT_EXPIRE=7d
+     PERPLEXITY_API_KEY=your_perplexity_api_key
+     FRONTEND_URL=https://your-vercel-app.vercel.app
+     ```
+   - **Note**: Update `FRONTEND_URL` after deploying frontend
+
+5. **Deploy**
+   - Railway will automatically deploy
+   - Note your deployment URL (e.g., `https://your-app.railway.app`)
+
+#### Option B: Deploy to Render
+
+1. **Sign up/Login to Render**
+   - Go to [render.com](https://render.com)
+   - Sign up with your GitHub account
+
+2. **Create New Web Service**
+   - Click "New +" → "Web Service"
    - Connect your GitHub repository
-   - Set root directory to `client`
-   - Add environment variable: `VITE_API_URL=your_backend_url`
-   - Deploy!
+   - Select your `AI_Interview_Coach` repository
+
+3. **Configure Service**
+   - **Name**: `ai-interview-coach-backend`
+   - **Root Directory**: `server`
+   - **Environment**: Node
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+
+4. **Add Environment Variables**
+   - Scroll to "Environment Variables"
+   - Add all variables from your `server/.env` (same as Railway)
+
+5. **Deploy**
+   - Click "Create Web Service"
+   - Render will build and deploy your backend
+   - Note your deployment URL (e.g., `https://your-app.onrender.com`)
+
+### Step 2: Deploy Frontend to Vercel
+
+1. **Sign up/Login to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign up with your GitHub account
+
+2. **Import Project**
+   - Click "Add New..." → "Project"
+   - Import your `AI_Interview_Coach` repository
+   - Vercel will auto-detect it's a Vite project
+
+3. **Configure Project Settings**
+   - **Framework Preset**: Vite (auto-detected)
+   - **Root Directory**: `client` (click "Edit" and set to `client`)
+   - **Build Command**: `npm run build` (auto-detected)
+   - **Output Directory**: `dist` (auto-detected)
+   - **Install Command**: `npm install` (auto-detected)
+
+4. **Add Environment Variables**
+   - Go to "Environment Variables" section
+   - Add the following:
+     ```
+     VITE_API_URL=https://your-backend-url.railway.app
+     ```
+   - Replace with your actual backend URL from Step 1
+   - **Important**: For production, make sure to select "Production", "Preview", and "Development" environments
+
+5. **Deploy**
+   - Click "Deploy"
+   - Vercel will build and deploy your frontend
+   - Your app will be live at `https://your-app.vercel.app`
+
+### Step 3: Update Backend CORS Configuration
+
+After deploying the frontend, update your backend's `FRONTEND_URL`:
+
+1. **Go to your backend hosting platform** (Railway/Render)
+2. **Update the `FRONTEND_URL` environment variable**:
+   ```
+   FRONTEND_URL=https://your-app.vercel.app
+   ```
+3. **Redeploy** the backend service
+
+### Step 4: Verify Deployment
+
+1. **Test Frontend**
+   - Visit your Vercel URL
+   - Check browser console for any errors
+   - Verify API calls are going to the correct backend URL
+
+2. **Test Backend**
+   - Test API endpoints using Postman or curl
+   - Verify CORS is working (no CORS errors in browser console)
+
+3. **Test Full Flow**
+   - Register a new user
+   - Start an interview session
+   - Test voice-to-text feature (requires HTTPS, which Vercel provides)
+
+### Troubleshooting Deployment
+
+#### Frontend Issues
+
+- **Build Fails**: Check build logs in Vercel dashboard
+- **API Not Connecting**: Verify `VITE_API_URL` is set correctly
+- **404 Errors**: Ensure `vercel.json` rewrites are configured correctly
+
+#### Backend Issues
+
+- **Server Not Starting**: Check logs in Railway/Render dashboard
+- **Database Connection**: Verify MongoDB Atlas allows connections from your hosting IP (usually 0.0.0.0/0)
+- **CORS Errors**: Ensure `FRONTEND_URL` matches your Vercel URL exactly
+
+#### Common Environment Variable Mistakes
+
+- Missing `https://` in URLs
+- Extra trailing slashes in URLs
+- Wrong variable names (case-sensitive)
+- Not setting variables for all environments (Production, Preview, Development)
+
+### Custom Domain (Optional)
+
+1. **In Vercel Dashboard**
+   - Go to your project → Settings → Domains
+   - Add your custom domain
+   - Follow DNS configuration instructions
+
+2. **Update Environment Variables**
+   - Update `FRONTEND_URL` in backend to your custom domain
+   - Update `VITE_API_URL` if needed (usually not required)
+
+### Continuous Deployment
+
+Both Vercel and Railway/Render support automatic deployments:
+- **Vercel**: Automatically deploys on every push to `main` branch
+- **Railway/Render**: Can be configured for auto-deploy on push
+
+To disable auto-deploy, configure in your hosting platform's settings.
 
 ## API Documentation
 
