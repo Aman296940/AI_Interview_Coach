@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import RefreshToken from '../models/RefreshToken.js';
 
@@ -10,6 +11,14 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SEC
 
 export const login = async (req, res, next) => {
   try {
+    // Check if database is connected
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Database is not connected. Please try again later.' 
+      });
+    }
+    
     const { email, password } = req.body;
     
     // Validate required fields
@@ -48,6 +57,14 @@ export const login = async (req, res, next) => {
 // Register handler
 export const register = async (req, res, next) => {
   try {
+    // Check if database is connected
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Database is not connected. Please try again later.' 
+      });
+    }
+    
     const { name, email, password } = req.body;
     
     // Validate required fields
