@@ -11,6 +11,12 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SEC
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+    
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -43,11 +49,23 @@ export const login = async (req, res, next) => {
 export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+    
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password are required' });
+    }
+    
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+    
     if (await User.findOne({ email })) {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
-    const hashed = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ name, email, password: hashed });
+    
+    // Let the User model's pre-save hook handle password hashing
+    const newUser = await User.create({ name, email, password });
     const accessToken = jwt.sign(
     { id: newUser._id },
     JWT_SECRET,
@@ -60,6 +78,7 @@ export const register = async (req, res, next) => {
     );
 
     await RefreshToken.create({ token: refreshToken, user: newUser._id });
+    
     res.status(201).json({
       success: true,
       accessToken,
@@ -69,6 +88,19 @@ export const register = async (req, res, next) => {
 
   } catch (err) {
     console.error('Register error:', err);
+    console.error('Error name:', err.name);
+    console.error('Error message:', err.message);
+    
+    // Handle specific mongoose errors
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: errors.join(', ') });
+    }
+    
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Email already exists' });
+    }
+    
     next(err);
   }
 };
