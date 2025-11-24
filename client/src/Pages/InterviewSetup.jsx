@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import axios from 'axios';
+import api from '../Services/api.js';
 
 export default function InterviewSetup() {
   const navigate = useNavigate();
@@ -13,15 +13,10 @@ export default function InterviewSetup() {
       setLoading(true);
       
       // Make API call to create interview
-      const token = localStorage.getItem('token'); // Assuming JWT auth
-      const response = await axios.post('/api/interview/start-interview', {
+      // The api instance already includes Authorization header via interceptor
+      const response = await api.post('/api/interview/start-interview', {
         type: role,
         difficulty: level
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
       });
 
       // Navigate only after successful API call
