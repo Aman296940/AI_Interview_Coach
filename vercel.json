@@ -5,6 +5,7 @@
   "devCommand": "cd client && npm run dev",
   "installCommand": "cd client && npm install",
   "framework": "vite",
+  "rootDirectory": "client",
   "rewrites": [
     {
       "source": "/(.*)",

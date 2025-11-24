@@ -357,6 +357,16 @@ After deploying the frontend, update your backend's `FRONTEND_URL`:
 
 #### Frontend Issues
 
+- **"No start command was found"**: 
+  - Ensure `client/package.json` has a `start` script (already included: `"start": "vite preview"`)
+  - Verify `vercel.json` has `"rootDirectory": "client"` set
+  - Make sure Root Directory in Vercel project settings is set to `client`
+
+- **"Node_modules directory found in project root"**:
+  - Ensure root `.gitignore` includes `node_modules/`
+  - Remove root `node_modules` if it exists (it shouldn't be in the root)
+  - Only `client/node_modules` and `server/node_modules` should exist
+
 - **Build Fails**: Check build logs in Vercel dashboard
 - **API Not Connecting**: Verify `VITE_API_URL` is set correctly
 - **404 Errors**: Ensure `vercel.json` rewrites are configured correctly
